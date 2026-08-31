@@ -20,7 +20,6 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif;
       background-color: var(--cream-bg);
-      /* Fundo com gradiente atmosférico e textura sutil */
       background-image: 
         radial-gradient(circle at 20% 20%, rgba(112, 130, 56, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
@@ -37,7 +36,6 @@
       position: relative;
     }
 
-    /* Brilho de fundo no modo escuro durante o giro */
     body.spinning {
       background-color: #0E120A;
       background-image: 
@@ -211,7 +209,6 @@
       "Vale Massagem"
     ];
 
-    // Índice do vencedor configurado (2 = "O PRÊMIO ESPECIAL")
     const TARGET_INDEX = 2;
 
     const canvas = document.getElementById("wheel");
@@ -320,30 +317,27 @@
       const targetAngleInSlice = sliceStartAngle + 2.0; 
       
       const finalAngleDegrees = (270 - targetAngleInSlice + 360) % 360;
-      const totalDegrees = (360 * 14) + finalAngleDegrees; // 14 voltas
+      const totalDegrees = (360 * 12) + finalAngleDegrees;
       
-      const duration = 15000; // 15 segundos totais
+      const duration = 14000;
       const startTime = performance.now();
       let lastSlice = -1;
 
-      // Curva em duas partes: arranque suave (0-18% do tempo) e desaceleração progressiva (18-100%)
-      function dramaticStartAndStop(t) {
-        if (t < 0.18) {
-          // Aceleração gradual e misteriosa no início
-          const subT = t / 0.18;
-          return Math.pow(subT, 2) * 0.08; 
-        } else {
-          // Desaceleração longa, orgânica e arrastada
-          const subT = (t - 0.18) / 0.82;
-          return 0.08 + (1 - Math.pow(1 - subT, 4.5)) * 0.92;
-        }
+      // Curva matemática única e contínua (S-Curve de aceleração fluida para frenagem longa)
+      function continuousNaturalCurve(t) {
+        return 56 * Math.pow(t, 3) 
+             - 210 * Math.pow(t, 4) 
+             + 336 * Math.pow(t, 5) 
+             - 280 * Math.pow(t, 6) 
+             + 120 * Math.pow(t, 7) 
+             - 21 * Math.pow(t, 8);
       }
 
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        const easedProgress = dramaticStartAndStop(progress);
+        const easedProgress = continuousNaturalCurve(progress);
         const currentDegrees = totalDegrees * easedProgress;
         currentAngle = (currentDegrees * Math.PI) / 180;
         
@@ -354,18 +348,18 @@
 
         const statusEl = document.getElementById("status-text");
 
-        if (progress < 0.18) {
-          statusEl.innerText = "Giro ganhando força...";
-        } else if (progress >= 0.18 && progress < 0.85) {
+        if (progress < 0.20) {
+          statusEl.innerText = "Ganhando embalo...";
+        } else if (progress >= 0.20 && progress < 0.80) {
           statusEl.innerText = `Passando por: ${currentItemName}`;
-        } else if (progress >= 0.85 && progress < 0.96) {
+        } else if (progress >= 0.80 && progress < 0.95) {
           statusEl.innerText = `Vai parar em: ${currentItemName}?`;
         } else {
-          statusEl.innerText = `Quase... só mais um milímetro...`;
+          statusEl.innerText = `Só mais um milímetro...`;
         }
 
         if (currentSlice !== lastSlice) {
-          const speedRatio = 1 - progress;
+          const speedRatio = Math.sin(progress * Math.PI); 
           playTickSound(speedRatio);
           lastSlice = currentSlice;
         }
