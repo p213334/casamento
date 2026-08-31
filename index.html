@@ -3,23 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nossa Roleta</title>
+  <title>Sorte ou Destino</title>
   <style>
     :root {
-      --olive-dark: #3B4727;
-      --olive-main: #556B2F;
+      --olive-dark: #2A331B;
+      --olive-main: #4D5E2B;
       --olive-light: #708238;
-      --olive-soft: #8F9E6D;
-      --cream-bg: #F8F7F2;
-      --gold-accent: #C5A059;
-      --text-color: #2C351E;
+      --olive-soft: #9BAA7C;
+      --cream-bg: #F5F4EF;
+      --gold-accent: #D4AF37;
+      --text-color: #202715;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif;
@@ -31,29 +27,38 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
+      transition: background-color 1.2s ease, color 1.2s ease;
+      overflow: hidden;
+    }
+
+    /* Modo de tensão durante o giro */
+    body.spinning {
+      background-color: #12160C;
+      color: #E2E5D8;
     }
 
     .container {
       text-align: center;
       max-width: 400px;
       width: 100%;
-    }
-
-    .header {
-      margin-bottom: 30px;
+      z-index: 2;
     }
 
     .header h1 {
       font-weight: 300;
-      letter-spacing: 2px;
-      font-size: 1.6rem;
-      color: var(--olive-dark);
+      letter-spacing: 3px;
+      font-size: 1.5rem;
       text-transform: uppercase;
+      transition: color 0.5s ease;
+    }
+
+    body.spinning .header h1 {
+      color: #F5F4EF;
     }
 
     .header p {
       font-size: 0.85rem;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       color: var(--olive-soft);
       margin-top: 6px;
     }
@@ -62,65 +67,107 @@
       position: relative;
       width: 320px;
       height: 320px;
-      margin: 0 auto;
+      margin: 30px auto;
     }
 
     .pointer {
       position: absolute;
-      top: -12px;
+      top: -14px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 18px solid var(--gold-accent);
+      border-left: 11px solid transparent;
+      border-right: 11px solid transparent;
+      border-top: 22px solid var(--gold-accent);
       z-index: 10;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+      transform-origin: 50% 0%;
+      transition: transform 0.05s ease;
     }
 
-    canvas {
+    /* Sobressalto da seta a cada clique */
+    .pointer.tick {
+      transform: translateX(-50%) rotate(-15deg);
+    }
+
+    canvas#wheel {
       border-radius: 50%;
-      box-shadow: 0 10px 30px rgba(59, 71, 39, 0.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transition: box-shadow 1s ease;
+    }
+
+    body.spinning canvas#wheel {
+      box-shadow: 0 0 45px rgba(212, 175, 55, 0.35);
+    }
+
+    canvas#confetti {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 100;
     }
 
     button {
-      margin-top: 35px;
-      padding: 14px 38px;
-      font-size: 0.9rem;
-      letter-spacing: 2px;
+      margin-top: 20px;
+      padding: 14px 40px;
+      font-size: 0.85rem;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--cream-bg);
       background-color: var(--olive-main);
-      border: 1px solid var(--olive-dark);
+      border: 1px solid var(--gold-accent);
       border-radius: 50px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.4s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
     button:hover:not(:disabled) {
-      background-color: var(--olive-dark);
+      background-color: var(--gold-accent);
+      color: var(--olive-dark);
       transform: translateY(-2px);
     }
 
     button:disabled {
-      opacity: 0.5;
+      opacity: 0.2;
       cursor: not-allowed;
+      border-color: transparent;
+    }
+
+    #status-text {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      height: 20px;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--gold-accent);
     }
 
     #result {
-      margin-top: 25px;
-      font-size: 1.1rem;
-      font-weight: 400;
-      letter-spacing: 1px;
-      color: var(--olive-dark);
-      min-height: 28px;
-      transition: opacity 0.5s ease;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--gold-accent);
+      margin-top: 10px;
+      min-height: 35px;
+    }
+
+    .reveal-animation {
+      animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
 <body>
+
+  <canvas id="confetti"></canvas>
 
   <div class="container">
     <div class="header">
@@ -129,11 +176,12 @@
     </div>
 
     <div class="wheel-wrapper">
-      <div class="pointer"></div>
+      <div class="pointer" id="pointer"></div>
       <canvas id="wheel" width="320" height="320"></canvas>
     </div>
 
-    <button id="spinBtn" onclick="startSpin()">Girar Roleta</button>
+    <button id="spinBtn" onclick="startDramaticSpin()">Descobrir Destino</button>
+    <div id="status-text"></div>
     <div id="result"></div>
   </div>
 
@@ -147,36 +195,65 @@
       "Vale Massagem"
     ];
 
-    // Índice do item vencedor (0 é o 1º item, 2 é "O PRÊMIO ESPECIAL")
-    const TARGET_INDEX = 2; 
+    // Índice do vencedor (2 = "O PRÊMIO ESPECIAL")
+    const TARGET_INDEX = 2;
 
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
+    const pointer = document.getElementById("pointer");
     const numItems = items.length;
     const arcSize = (2 * Math.PI) / numItems;
-    
-    // Paleta Verde Oliva Minimalista
-    const colors = ["#556B2F", "#6B7A49", "#8F9E6D", "#A3B18A", "#556B2F", "#6B7A49"];
+    const colors = ["#4D5E2B", "#5C6F36", "#708238", "#8A9B52", "#4D5E2B", "#5C6F36"];
 
     let currentAngle = 0;
     let isSpinning = false;
     let audioCtx = null;
 
-    function playTick() {
+    function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
+    }
+
+    function playTickSound(speedRatio) {
+      if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.03);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+      
+      // O tom fica ligeiramente mais grave conforme a roleta desacelera
+      const freq = 300 + (speedRatio * 300); 
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.03);
+      osc.stop(audioCtx.currentTime + 0.04);
+
+      // Animação da seta
+      pointer.classList.add("tick");
+      setTimeout(() => pointer.classList.remove("tick"), 40);
+    }
+
+    function playWinSound() {
+      if (!audioCtx) return;
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // Acorde Maior (C5, E5, G5, C6)
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (i * 0.12));
+        
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + (i * 0.12));
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (i * 0.12) + 0.8);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + (i * 0.12));
+        osc.stop(audioCtx.currentTime + (i * 0.12) + 0.8);
+      });
     }
 
     function drawWheel(rotation = 0) {
@@ -190,78 +267,158 @@
         ctx.arc(160, 160, 155, angle, angle + arcSize);
         ctx.fill();
 
-        ctx.strokeStyle = "#F8F7F2";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#F5F4EF";
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.save();
         ctx.translate(160, 160);
         ctx.rotate(angle + arcSize / 2);
         ctx.textAlign = "right";
-        ctx.fillStyle = "#F8F7F2";
+        ctx.fillStyle = "#F5F4EF";
         ctx.font = "500 12px sans-serif";
         ctx.fillText(items[i], 135, 4);
         ctx.restore();
       }
 
-      // Anel interno decorativo
+      // Centro
       ctx.beginPath();
-      ctx.arc(160, 160, 25, 0, 2 * Math.PI);
-      ctx.fillStyle = "#F8F7F2";
+      ctx.arc(160, 160, 22, 0, 2 * Math.PI);
+      ctx.fillStyle = "#F5F4EF";
       ctx.fill();
-      ctx.strokeStyle = "#C5A059";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#D4AF37";
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
 
     drawWheel(currentAngle);
 
-    function startSpin() {
+    function startDramaticSpin() {
       if (isSpinning) return;
+      initAudio();
+      
       isSpinning = true;
+      document.body.classList.add("spinning");
       document.getElementById("spinBtn").disabled = true;
       document.getElementById("result").innerText = "";
+      document.getElementById("status-text").innerText = "O destino está girando...";
 
       const degreesPerSlice = 360 / numItems;
       const targetSliceCenter = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice / 2);
       
-      // Ponteira está no topo (270 graus). Calcula o ângulo exato para parar no TARGET_INDEX
+      // Posição exata final na ponteira superior (270º)
       const finalAngleDegrees = (270 - targetSliceCenter + 360) % 360;
-      const totalDegrees = (360 * 10) + finalAngleDegrees; // 10 voltas completas para dar drama
+      const totalDegrees = (360 * 12) + finalAngleDegrees; // 12 voltas de suspense
       
-      const duration = 8000; // 8 segundos de giro
+      const duration = 10000; // 10 segundos de pura tensão
       const startTime = performance.now();
-      let lastSliceIndex = -1;
+      let lastSlice = -1;
+
+      // Easing de extrema tensão: Desacelera drasticamente e quase para antes de dar o último clique
+      function dramaticEasing(t) {
+        if (t < 0.75) {
+          // Fase 1: Desaceleração normal rápida
+          return Math.pow(t / 0.75, 2) * 0.85;
+        } else {
+          // Fase 2: Rastejo agonizante nos últimos 25% do tempo
+          const subT = (t - 0.75) / 0.25;
+          return 0.85 + (1 - Math.pow(1 - subT, 3)) * 0.15;
+        }
+      }
 
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // Easing ultra-dramático (suave até parar quase desacelerando no fim)
-        const easeOut = 1 - Math.pow(1 - progress, 4);
-        
-        const currentDegrees = totalDegrees * easeOut;
+        const easedProgress = dramaticEasing(progress);
+        const currentDegrees = totalDegrees * easedProgress;
         currentAngle = (currentDegrees * Math.PI) / 180;
         
         drawWheel(currentAngle);
 
-        // Identifica a fatia atual na ponteira para reproduzir o som de clique
+        // Atualização dos textos de suspense
+        if (progress > 0.65 && progress < 0.88) {
+          document.getElementById("status-text").innerText = "Quase lá...";
+        } else if (progress >= 0.88) {
+          document.getElementById("status-text").innerText = "Será...?";
+        }
+
+        // Som de clique a cada partição
         const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
-        if (currentSlice !== lastSliceIndex) {
-          playTick();
-          lastSliceIndex = currentSlice;
+        if (currentSlice !== lastSlice) {
+          const speedRatio = 1 - progress;
+          playTickSound(speedRatio);
+          lastSlice = currentSlice;
         }
 
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
-          setTimeout(() => {
-            document.getElementById("result").innerText = `✨ ${items[TARGET_INDEX]} ✨`;
-          }, 300);
+          // Finalização
+          document.body.classList.remove("spinning");
+          document.getElementById("status-text").innerText = "";
+          
+          const resultEl = document.getElementById("result");
+          resultEl.innerText = `✨ ${items[TARGET_INDEX]} ✨`;
+          resultEl.classList.add("reveal-animation");
+          
+          playWinSound();
+          triggerConfetti();
         }
       }
 
       requestAnimationFrame(animate);
+    }
+
+    // Efeito de Confetes em tom Ouro e Verde
+    function triggerConfetti() {
+      const confettiCanvas = document.getElementById("confetti");
+      const cCtx = confettiCanvas.getContext("2d");
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+
+      const particles = [];
+      const particleColors = ["#D4AF37", "#4D5E2B", "#708238", "#F5F4EF"];
+
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.7) * 12,
+          color: particleColors[Math.floor(Math.random() * particleColors.length)],
+          size: Math.random() * 6 + 4,
+          gravity: 0.25,
+          opacity: 1
+        });
+      }
+
+      function animateConfetti() {
+        cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          if (p.opacity > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.opacity -= 0.012;
+
+            cCtx.save();
+            cCtx.globalAlpha = Math.max(0, p.opacity);
+            cCtx.fillStyle = p.color;
+            cCtx.beginPath();
+            cCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            cCtx.fill();
+            cCtx.restore();
+          }
+        });
+
+        if (active) requestAnimationFrame(animateConfetti);
+      }
+
+      animateConfetti();
     }
   </script>
 </body>
