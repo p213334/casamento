@@ -3,149 +3,265 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Roleta de Casamento</title>
+  <title>Nossa Roleta</title>
   <style>
+    :root {
+      --olive-dark: #3B4727;
+      --olive-main: #556B2F;
+      --olive-light: #708238;
+      --olive-soft: #8F9E6D;
+      --cream-bg: #F8F7F2;
+      --gold-accent: #C5A059;
+      --text-color: #2C351E;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #fdfbf7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif;
+      background-color: var(--cream-bg);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
+      padding: 20px;
     }
 
-    h1 {
-      color: #4a3b32;
-      margin-bottom: 20px;
+    .container {
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
     }
 
-    .wheel-container {
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-weight: 300;
+      letter-spacing: 2px;
+      font-size: 1.6rem;
+      color: var(--olive-dark);
+      text-transform: uppercase;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: var(--olive-soft);
+      margin-top: 6px;
+    }
+
+    .wheel-wrapper {
       position: relative;
       width: 320px;
       height: 320px;
+      margin: 0 auto;
     }
 
     .pointer {
       position: absolute;
-      top: -15px;
+      top: -12px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-top: 25px solid #d9534f;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 18px solid var(--gold-accent);
       z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
 
     canvas {
       border-radius: 50%;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-      transition: transform 5s cubic-bezier(0.15, 0.9, 0.2, 1);
+      box-shadow: 0 10px 30px rgba(59, 71, 39, 0.12);
     }
 
     button {
-      margin-top: 30px;
-      padding: 12px 30px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: white;
-      background-color: #d9534f;
-      border: none;
-      border-radius: 25px;
+      margin-top: 35px;
+      padding: 14px 38px;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--cream-bg);
+      background-color: var(--olive-main);
+      border: 1px solid var(--olive-dark);
+      border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--olive-dark);
+      transform: translateY(-2px);
     }
 
     button:disabled {
-      background-color: #ccc;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     #result {
-      margin-top: 20px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #333;
-      height: 30px;
-      text-align: center;
+      margin-top: 25px;
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      color: var(--olive-dark);
+      min-height: 28px;
+      transition: opacity 0.5s ease;
     }
   </style>
 </head>
 <body>
 
-  <h1>Gire a Roleta! 💍</h1>
+  <div class="container">
+    <div class="header">
+      <h1>Sorte ou Destino</h1>
+      <p>💍 Presente de Casamento</p>
+    </div>
 
-  <div class="wheel-container">
-    <div class="pointer"></div>
-    <canvas id="wheel" width="320" height="320"></canvas>
+    <div class="wheel-wrapper">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="320" height="320"></canvas>
+    </div>
+
+    <button id="spinBtn" onclick="startSpin()">Girar Roleta</button>
+    <div id="result"></div>
   </div>
 
-  <button id="spinBtn" onclick="spin()">GIRAR</button>
-  <div id="result"></div>
-
   <script>
-    // 1. Edite os itens da roleta aqui:
     const items = [
-      "Viagem Surpresa", 
-      "Jantar Romântico", 
-      "O PRÊMIO ESPECIAL", 
-      "Vale Massagem", 
-      "Café na Cama", 
-      "Noite de Filmes"
+      "Jantar Romântico",
+      "Viagem Surpresa",
+      "O PRÊMIO ESPECIAL",
+      "Noite de Cinema",
+      "Café na Cama",
+      "Vale Massagem"
     ];
-    
-    // 2. Escolha o índice do item que SEMPRE vai ganhar (0 é o 1º item, 2 é "O PRÊMIO ESPECIAL")
+
+    // Índice do item vencedor (0 é o 1º item, 2 é "O PRÊMIO ESPECIAL")
     const TARGET_INDEX = 2; 
 
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
     const numItems = items.length;
     const arcSize = (2 * Math.PI) / numItems;
-    const colors = ["#FF9AA2", "#FFB7B2", "#FFDAC1", "#E2F0CB", "#B5EAD7", "#C7CEEA"];
+    
+    // Paleta Verde Oliva Minimalista
+    const colors = ["#556B2F", "#6B7A49", "#8F9E6D", "#A3B18A", "#556B2F", "#6B7A49"];
 
-    function drawWheel() {
+    let currentAngle = 0;
+    let isSpinning = false;
+    let audioCtx = null;
+
+    function playTick() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.03);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.03);
+    }
+
+    function drawWheel(rotation = 0) {
+      ctx.clearRect(0, 0, 320, 320);
+      
       for (let i = 0; i < numItems; i++) {
-        const angle = i * arcSize;
+        const angle = rotation + (i * arcSize);
         ctx.beginPath();
         ctx.fillStyle = colors[i % colors.length];
         ctx.moveTo(160, 160);
-        ctx.arc(160, 160, 160, angle, angle + arcSize);
+        ctx.arc(160, 160, 155, angle, angle + arcSize);
         ctx.fill();
+
+        ctx.strokeStyle = "#F8F7F2";
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
         ctx.save();
         ctx.translate(160, 160);
         ctx.rotate(angle + arcSize / 2);
         ctx.textAlign = "right";
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 13px sans-serif";
-        ctx.fillText(items[i], 140, 5);
+        ctx.fillStyle = "#F8F7F2";
+        ctx.font = "500 12px sans-serif";
+        ctx.fillText(items[i], 135, 4);
         ctx.restore();
       }
+
+      // Anel interno decorativo
+      ctx.beginPath();
+      ctx.arc(160, 160, 25, 0, 2 * Math.PI);
+      ctx.fillStyle = "#F8F7F2";
+      ctx.fill();
+      ctx.strokeStyle = "#C5A059";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
-    drawWheel();
+    drawWheel(currentAngle);
 
-    let spun = false;
-
-    function spin() {
-      if (spun) return;
-      spun = true;
+    function startSpin() {
+      if (isSpinning) return;
+      isSpinning = true;
       document.getElementById("spinBtn").disabled = true;
+      document.getElementById("result").innerText = "";
 
       const degreesPerSlice = 360 / numItems;
-      const targetCenterAngle = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice / 2);
+      const targetSliceCenter = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice / 2);
       
-      // Dá 5 voltas completas e trava exatamente no item desejado na ponteira superior
-      const targetRotation = (360 * 5) + (270 - targetCenterAngle);
+      // Ponteira está no topo (270 graus). Calcula o ângulo exato para parar no TARGET_INDEX
+      const finalAngleDegrees = (270 - targetSliceCenter + 360) % 360;
+      const totalDegrees = (360 * 10) + finalAngleDegrees; // 10 voltas completas para dar drama
+      
+      const duration = 8000; // 8 segundos de giro
+      const startTime = performance.now();
+      let lastSliceIndex = -1;
 
-      canvas.style.transform = `rotate(${targetRotation}deg)`;
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing ultra-dramático (suave até parar quase desacelerando no fim)
+        const easeOut = 1 - Math.pow(1 - progress, 4);
+        
+        const currentDegrees = totalDegrees * easeOut;
+        currentAngle = (currentDegrees * Math.PI) / 180;
+        
+        drawWheel(currentAngle);
 
-      setTimeout(() => {
-        document.getElementById("result").innerText = `🎉 Parabéns! Você ganhou: ${items[TARGET_INDEX]}!`;
-      }, 5000);
+        // Identifica a fatia atual na ponteira para reproduzir o som de clique
+        const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
+        if (currentSlice !== lastSliceIndex) {
+          playTick();
+          lastSliceIndex = currentSlice;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setTimeout(() => {
+            document.getElementById("result").innerText = `✨ ${items[TARGET_INDEX]} ✨`;
+          }, 300);
+        }
+      }
+
+      requestAnimationFrame(animate);
     }
   </script>
 </body>
