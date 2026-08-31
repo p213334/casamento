@@ -27,13 +27,12 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      transition: background-color 1.2s ease, color 1.2s ease;
+      transition: background-color 1.5s ease;
       overflow: hidden;
     }
 
     body.spinning {
       background-color: #12160C;
-      color: #E2E5D8;
     }
 
     .container {
@@ -82,11 +81,11 @@
       z-index: 10;
       filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
       transform-origin: 50% 0%;
-      transition: transform 0.05s ease;
+      transition: transform 0.04s ease-out;
     }
 
     .pointer.tick {
-      transform: translateX(-50%) rotate(-18deg);
+      transform: translateX(-50%) rotate(-14deg);
     }
 
     canvas#wheel {
@@ -96,7 +95,7 @@
     }
 
     body.spinning canvas#wheel {
-      box-shadow: 0 0 45px rgba(212, 175, 55, 0.35);
+      box-shadow: 0 0 45px rgba(212, 175, 55, 0.3);
     }
 
     canvas#confetti {
@@ -178,7 +177,7 @@
       <canvas id="wheel" width="320" height="320"></canvas>
     </div>
 
-    <button id="spinBtn" onclick="startDramaticSpin()">Girar Roleta</button>
+    <button id="spinBtn" onclick="startNaturalSpin()">Girar Roleta</button>
     <div id="status-text"></div>
     <div id="result"></div>
   </div>
@@ -217,20 +216,20 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
-      const freq = 250 + (speedRatio * 350); 
+      const freq = 220 + (speedRatio * 380); 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
       
-      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
       
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.05);
+      osc.stop(audioCtx.currentTime + 0.04);
 
       pointer.classList.add("tick");
-      setTimeout(() => pointer.classList.remove("tick"), 50);
+      setTimeout(() => pointer.classList.remove("tick"), 40);
     }
 
     function playWinSound() {
@@ -288,7 +287,7 @@
 
     drawWheel(currentAngle);
 
-    function startDramaticSpin() {
+    function startNaturalSpin() {
       if (isSpinning) return;
       initAudio();
       
@@ -296,42 +295,31 @@
       document.body.classList.add("spinning");
       document.getElementById("spinBtn").disabled = true;
       document.getElementById("result").innerText = "";
-      document.getElementById("status-text").innerText = "Qual opção vai sair?";
 
       const degreesPerSlice = 360 / numItems;
       
-      // Posição ajustada ligeiramente além da borda de entrada do item vencedor
-      // para forçar o ponteiro a cruzar a pino divisório no instante final.
-      const targetSliceCenter = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice * 0.35);
+      // Posição final: exatamente 2.5 graus após a linha divisória do item vencedor.
+      // Dando a impressão visual de que a roleta quase parou no item anterior.
+      const sliceStartAngle = TARGET_INDEX * degreesPerSlice;
+      const targetAngleInSlice = sliceStartAngle + 2.5; 
       
-      const finalAngleDegrees = (270 - targetSliceCenter + 360) % 360;
-      const totalDegrees = (360 * 11) + finalAngleDegrees;
+      const finalAngleDegrees = (270 - targetAngleInSlice + 360) % 360;
+      const totalDegrees = (360 * 9) + finalAngleDegrees; // 9 voltas completas
       
-      const duration = 11000; // 11 segundos
+      const duration = 9500; // 9.5 segundos de desaceleração suave
       const startTime = performance.now();
       let lastSlice = -1;
 
-      // Curva em 3 estágios: Rápido -> Quase para no item anterior -> Empurrão lento final
-      function dramaticEasing(t) {
-        if (t < 0.65) {
-          // Estágio 1: Desaceleração até 88% da rotação total
-          return Math.pow(t / 0.65, 2) * 0.88;
-        } else if (t < 0.88) {
-          // Estágio 2: Rastejo lento bem em cima da divisão da opção anterior
-          const subT = (t - 0.65) / 0.23;
-          return 0.88 + (1 - Math.pow(1 - subT, 2)) * 0.08;
-        } else {
-          // Estágio 3: O clique final agoniante que ultrapassa a linha
-          const subT = (t - 0.88) / 0.12;
-          return 0.96 + (1 - Math.pow(1 - subT, 3)) * 0.04;
-        }
+      // Desaceleração física contínua (Atrito natural sem degraus artificiais)
+      function naturalDeceleration(t) {
+        return 1 - Math.pow(1 - t, 4.8);
       }
 
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        const easedProgress = dramaticEasing(progress);
+        const easedProgress = naturalDeceleration(progress);
         const currentDegrees = totalDegrees * easedProgress;
         currentAngle = (currentDegrees * Math.PI) / 180;
         
@@ -340,10 +328,12 @@
         const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
         const currentItemName = items[currentSlice];
 
-        if (progress > 0.55 && progress < 0.88) {
-          document.getElementById("status-text").innerText = `Vai parar em: ${currentItemName}?`;
-        } else if (progress >= 0.88) {
-          document.getElementById("status-text").innerText = `Quase... só mais um pouco...`;
+        if (progress > 0.60 && progress < 0.92) {
+          document.getElementById("status-text").innerText = `Passando por: ${currentItemName}`;
+        } else if (progress >= 0.92) {
+          document.getElementById("status-text").innerText = `Quase parando...`;
+        } else {
+          document.getElementById("status-text").innerText = "Girando...";
         }
 
         if (currentSlice !== lastSlice) {
