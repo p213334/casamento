@@ -39,13 +39,13 @@
     body.spinning {
       background-color: #0E120A;
       background-image: 
-        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.12) 0%, rgba(14, 18, 10, 0.95) 70%),
-        radial-gradient(circle at 20% 30%, rgba(77, 94, 43, 0.2) 0%, transparent 40%);
+        radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.15) 0%, rgba(14, 18, 10, 0.96) 70%),
+        radial-gradient(circle at 20% 30%, rgba(77, 94, 43, 0.25) 0%, transparent 40%);
     }
 
     .container {
       text-align: center;
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       z-index: 2;
     }
@@ -71,34 +71,34 @@
 
     .wheel-wrapper {
       position: relative;
-      width: 320px;
-      height: 320px;
-      margin: 30px auto;
+      width: 340px;
+      height: 340px;
+      margin: 25px auto;
     }
 
     .pointer {
       position: absolute;
-      top: -14px;
+      top: -16px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 11px solid transparent;
-      border-right: 11px solid transparent;
-      border-top: 22px solid var(--gold-accent);
+      border-left: 13px solid transparent;
+      border-right: 13px solid transparent;
+      border-top: 26px solid var(--gold-accent);
       z-index: 10;
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
       transform-origin: 50% 0%;
-      transition: transform 0.04s ease-out;
+      transition: transform 0.05s ease-out;
     }
 
     .pointer.tick {
-      transform: translateX(-50%) rotate(-15deg);
+      transform: translateX(-50%) rotate(-18deg);
     }
 
     canvas#wheel {
       border-radius: 50%;
-      box-shadow: 0 12px 35px rgba(42, 51, 27, 0.15);
+      box-shadow: 0 12px 35px rgba(42, 51, 27, 0.18);
       transition: box-shadow 1.5s ease;
       animation: floatWheel 4s ease-in-out infinite alternate;
     }
@@ -109,7 +109,7 @@
     }
 
     body.spinning canvas#wheel {
-      box-shadow: 0 0 50px rgba(212, 175, 55, 0.35);
+      box-shadow: 0 0 55px rgba(212, 175, 55, 0.4);
       animation: none;
     }
 
@@ -122,7 +122,7 @@
     }
 
     button {
-      margin-top: 20px;
+      margin-top: 15px;
       padding: 14px 40px;
       font-size: 0.85rem;
       letter-spacing: 3px;
@@ -150,20 +150,40 @@
       border-color: transparent;
     }
 
-    #status-text {
-      margin-top: 20px;
-      font-size: 0.85rem;
-      letter-spacing: 1.5px;
-      height: 24px;
+    /* Painel de leitura em tempo real */
+    #status-container {
+      margin-top: 15px;
+      height: 45px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #status-label {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      font-weight: 500;
+      color: var(--olive-soft);
+      margin-bottom: 2px;
+    }
+
+    #status-text {
+      font-size: 1.1rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 700;
       color: var(--gold-accent);
-      transition: opacity 0.3s ease;
+      transition: transform 0.1s ease;
+    }
+
+    #status-text.pulse {
+      transform: scale(1.1);
     }
 
     #result {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.3rem;
+      font-weight: 700;
       color: var(--gold-accent);
       margin-top: 10px;
       min-height: 35px;
@@ -191,11 +211,16 @@
 
     <div class="wheel-wrapper">
       <div class="pointer" id="pointer"></div>
-      <canvas id="wheel" width="320" height="320"></canvas>
+      <canvas id="wheel" width="340" height="340"></canvas>
     </div>
 
     <button id="spinBtn" onclick="startNaturalSpin()">Girar Roleta</button>
-    <div id="status-text"></div>
+
+    <div id="status-container">
+      <div id="status-label"></div>
+      <div id="status-text"></div>
+    </div>
+
     <div id="result"></div>
   </div>
 
@@ -216,7 +241,9 @@
     const pointer = document.getElementById("pointer");
     const numItems = items.length;
     const arcSize = (2 * Math.PI) / numItems;
-    const colors = ["#4D5E2B", "#5C6F36", "#708238", "#8A9B52", "#4D5E2B", "#5C6F36"];
+
+    // Cores alternadas com contraste aprimorado
+    const colors = ["#3B4920", "#4D5E2B", "#5C6F36", "#708238", "#3B4920", "#5C6F36"];
 
     let currentAngle = 0;
     let isSpinning = false;
@@ -232,20 +259,20 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
-      const freq = 200 + (speedRatio * 400); 
+      const freq = 180 + (speedRatio * 380); 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
       
-      gain.gain.setValueAtTime(0.16, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
       
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.04);
+      osc.stop(audioCtx.currentTime + 0.05);
 
       pointer.classList.add("tick");
-      setTimeout(() => pointer.classList.remove("tick"), 40);
+      setTimeout(() => pointer.classList.remove("tick"), 50);
     }
 
     function playWinSound() {
@@ -268,36 +295,43 @@
     }
 
     function drawWheel(rotation = 0) {
-      ctx.clearRect(0, 0, 320, 320);
+      ctx.clearRect(0, 0, 340, 340);
       
       for (let i = 0; i < numItems; i++) {
         const angle = rotation + (i * arcSize);
         ctx.beginPath();
         ctx.fillStyle = colors[i % colors.length];
-        ctx.moveTo(160, 160);
-        ctx.arc(160, 160, 155, angle, angle + arcSize);
+        ctx.moveTo(170, 170);
+        ctx.arc(170, 170, 165, angle, angle + arcSize);
         ctx.fill();
 
+        // Linhas divisorias bem definidas
         ctx.strokeStyle = "#F5F4EF";
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
+        // Renderização dos Textos das Opções com Nitidez Extrema
         ctx.save();
-        ctx.translate(160, 160);
+        ctx.translate(170, 170);
         ctx.rotate(angle + arcSize / 2);
         ctx.textAlign = "right";
-        ctx.fillStyle = "#F5F4EF";
-        ctx.font = "500 12px sans-serif";
-        ctx.fillText(items[i], 135, 4);
+        
+        // Sombra de texto para destacar sobre qualquer cor de fundo
+        ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 13px -apple-system, sans-serif";
+        ctx.fillText(items[i], 148, 5);
         ctx.restore();
       }
 
+      // Centro decorativo em dourado e marfim
       ctx.beginPath();
-      ctx.arc(160, 160, 22, 0, 2 * Math.PI);
+      ctx.arc(170, 170, 24, 0, 2 * Math.PI);
       ctx.fillStyle = "#F5F4EF";
       ctx.fill();
       ctx.strokeStyle = "#D4AF37";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.stroke();
     }
 
@@ -314,30 +348,34 @@
 
       const degreesPerSlice = 360 / numItems;
       const sliceStartAngle = TARGET_INDEX * degreesPerSlice;
+      
+      // Para a 2.0 graus após a divisória do prêmio principal
       const targetAngleInSlice = sliceStartAngle + 2.0; 
       
       const finalAngleDegrees = (270 - targetAngleInSlice + 360) % 360;
-      const totalDegrees = (360 * 12) + finalAngleDegrees;
+      const totalDegrees = (360 * 10) + finalAngleDegrees; // 10 voltas para manter visibilidade
       
-      const duration = 14000;
+      const duration = 16000; // 16 segundos totais para dar tempo de ler e torcer
       const startTime = performance.now();
       let lastSlice = -1;
 
-      // Curva matemática única e contínua (S-Curve de aceleração fluida para frenagem longa)
-      function continuousNaturalCurve(t) {
-        return 56 * Math.pow(t, 3) 
-             - 210 * Math.pow(t, 4) 
-             + 336 * Math.pow(t, 5) 
-             - 280 * Math.pow(t, 6) 
-             + 120 * Math.pow(t, 7) 
-             - 21 * Math.pow(t, 8);
+      // Curva com aceleração gradual e desaceleração arrastada fatia por fatia
+      function dramaticReadabilityCurve(t) {
+        if (t < 0.25) {
+          // Aceleração suave onde ainda dá para acompanhar o início
+          return Math.pow(t / 0.25, 2) * 0.15;
+        } else {
+          // Desaceleração longa que reduz drasticamente nos últimos 30% da corrida
+          const subT = (t - 0.25) / 0.75;
+          return 0.15 + (1 - Math.pow(1 - subT, 4.2)) * 0.85;
+        }
       }
 
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        const easedProgress = continuousNaturalCurve(progress);
+        const easedProgress = dramaticReadabilityCurve(progress);
         const currentDegrees = totalDegrees * easedProgress;
         currentAngle = (currentDegrees * Math.PI) / 180;
         
@@ -346,21 +384,30 @@
         const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
         const currentItemName = items[currentSlice];
 
+        const labelEl = document.getElementById("status-label");
         const statusEl = document.getElementById("status-text");
 
-        if (progress < 0.20) {
-          statusEl.innerText = "Ganhando embalo...";
-        } else if (progress >= 0.20 && progress < 0.80) {
-          statusEl.innerText = `Passando por: ${currentItemName}`;
-        } else if (progress >= 0.80 && progress < 0.95) {
-          statusEl.innerText = `Vai parar em: ${currentItemName}?`;
+        if (progress < 0.25) {
+          labelEl.innerText = "Sua sorte está girando";
+          statusEl.innerText = "Preparem-se...";
+        } else if (progress >= 0.25 && progress < 0.75) {
+          labelEl.innerText = "Passando por";
+          statusEl.innerText = currentItemName;
+        } else if (progress >= 0.75 && progress < 0.94) {
+          labelEl.innerText = "Será que vai ser...";
+          statusEl.innerText = `${currentItemName}?`;
         } else {
-          statusEl.innerText = `Só mais um milímetro...`;
+          labelEl.innerText = "Parando em...";
+          statusEl.innerText = currentItemName;
         }
 
         if (currentSlice !== lastSlice) {
-          const speedRatio = Math.sin(progress * Math.PI); 
+          const speedRatio = Math.max(0.05, 1 - progress); 
           playTickSound(speedRatio);
+          
+          statusEl.classList.add("pulse");
+          setTimeout(() => statusEl.classList.remove("pulse"), 80);
+
           lastSlice = currentSlice;
         }
 
@@ -368,6 +415,7 @@
           requestAnimationFrame(animate);
         } else {
           document.body.classList.remove("spinning");
+          labelEl.innerText = "Resultado";
           statusEl.innerText = "";
           
           const resultEl = document.getElementById("result");
