@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sorte ou Destino</title>
+  <title>Roleta de Presentes</title>
   <style>
     :root {
       --olive-dark: #2A331B;
@@ -31,7 +31,6 @@
       overflow: hidden;
     }
 
-    /* Modo de tensão durante o giro */
     body.spinning {
       background-color: #12160C;
       color: #E2E5D8;
@@ -86,7 +85,6 @@
       transition: transform 0.05s ease;
     }
 
-    /* Sobressalto da seta a cada clique */
     .pointer.tick {
       transform: translateX(-50%) rotate(-15deg);
     }
@@ -140,8 +138,8 @@
     #status-text {
       margin-top: 20px;
       font-size: 0.85rem;
-      letter-spacing: 2px;
-      height: 20px;
+      letter-spacing: 1.5px;
+      height: 24px;
       text-transform: uppercase;
       font-weight: 500;
       color: var(--gold-accent);
@@ -171,7 +169,7 @@
 
   <div class="container">
     <div class="header">
-      <h1>Sorte ou Destino</h1>
+      <h1>Roleta do Casal</h1>
       <p>💍 Presente de Casamento</p>
     </div>
 
@@ -180,7 +178,7 @@
       <canvas id="wheel" width="320" height="320"></canvas>
     </div>
 
-    <button id="spinBtn" onclick="startDramaticSpin()">Descobrir Destino</button>
+    <button id="spinBtn" onclick="startDramaticSpin()">Girar Roleta</button>
     <div id="status-text"></div>
     <div id="result"></div>
   </div>
@@ -195,7 +193,7 @@
       "Vale Massagem"
     ];
 
-    // Índice do vencedor (2 = "O PRÊMIO ESPECIAL")
+    // Índice do vencedor configurado (2 = "O PRÊMIO ESPECIAL")
     const TARGET_INDEX = 2;
 
     const canvas = document.getElementById("wheel");
@@ -219,7 +217,6 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
-      // O tom fica ligeiramente mais grave conforme a roleta desacelera
       const freq = 300 + (speedRatio * 300); 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -232,14 +229,13 @@
       osc.start();
       osc.stop(audioCtx.currentTime + 0.04);
 
-      // Animação da seta
       pointer.classList.add("tick");
       setTimeout(() => pointer.classList.remove("tick"), 40);
     }
 
     function playWinSound() {
       if (!audioCtx) return;
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // Acorde Maior (C5, E5, G5, C6)
+      const notes = [523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -281,7 +277,6 @@
         ctx.restore();
       }
 
-      // Centro
       ctx.beginPath();
       ctx.arc(160, 160, 22, 0, 2 * Math.PI);
       ctx.fillStyle = "#F5F4EF";
@@ -301,26 +296,22 @@
       document.body.classList.add("spinning");
       document.getElementById("spinBtn").disabled = true;
       document.getElementById("result").innerText = "";
-      document.getElementById("status-text").innerText = "O destino está girando...";
+      document.getElementById("status-text").innerText = "Qual opção vai sair?";
 
       const degreesPerSlice = 360 / numItems;
       const targetSliceCenter = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice / 2);
       
-      // Posição exata final na ponteira superior (270º)
       const finalAngleDegrees = (270 - targetSliceCenter + 360) % 360;
-      const totalDegrees = (360 * 12) + finalAngleDegrees; // 12 voltas de suspense
+      const totalDegrees = (360 * 12) + finalAngleDegrees;
       
-      const duration = 10000; // 10 segundos de pura tensão
+      const duration = 10000;
       const startTime = performance.now();
       let lastSlice = -1;
 
-      // Easing de extrema tensão: Desacelera drasticamente e quase para antes de dar o último clique
       function dramaticEasing(t) {
         if (t < 0.75) {
-          // Fase 1: Desaceleração normal rápida
           return Math.pow(t / 0.75, 2) * 0.85;
         } else {
-          // Fase 2: Rastejo agonizante nos últimos 25% do tempo
           const subT = (t - 0.75) / 0.25;
           return 0.85 + (1 - Math.pow(1 - subT, 3)) * 0.15;
         }
@@ -336,15 +327,17 @@
         
         drawWheel(currentAngle);
 
-        // Atualização dos textos de suspense
-        if (progress > 0.65 && progress < 0.88) {
-          document.getElementById("status-text").innerText = "Quase lá...";
-        } else if (progress >= 0.88) {
-          document.getElementById("status-text").innerText = "Será...?";
+        // Identifica o item atual sob a seta
+        const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
+        const currentItemName = items[currentSlice];
+
+        // Texto dinâmico destacando as outras opções conforme desacelera
+        if (progress > 0.60 && progress < 0.85) {
+          document.getElementById("status-text").innerText = `Passando por: ${currentItemName}...`;
+        } else if (progress >= 0.85) {
+          document.getElementById("status-text").innerText = `Vai parar em: ${currentItemName}?`;
         }
 
-        // Som de clique a cada partição
-        const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
         if (currentSlice !== lastSlice) {
           const speedRatio = 1 - progress;
           playTickSound(speedRatio);
@@ -354,7 +347,6 @@
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
-          // Finalização
           document.body.classList.remove("spinning");
           document.getElementById("status-text").innerText = "";
           
@@ -370,7 +362,6 @@
       requestAnimationFrame(animate);
     }
 
-    // Efeito de Confetes em tom Ouro e Verde
     function triggerConfetti() {
       const confettiCanvas = document.getElementById("confetti");
       const cCtx = confettiCanvas.getContext("2d");
