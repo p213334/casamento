@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roleta de Casamento</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fdfbf7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: #4a3b32;
+      margin-bottom: 20px;
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 320px;
+      height: 320px;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 25px solid #d9534f;
+      z-index: 10;
+    }
+
+    canvas {
+      border-radius: 50%;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      transition: transform 5s cubic-bezier(0.15, 0.9, 0.2, 1);
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      background-color: #d9534f;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      height: 30px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Gire a Roleta! 💍</h1>
+
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="320" height="320"></canvas>
+  </div>
+
+  <button id="spinBtn" onclick="spin()">GIRAR</button>
+  <div id="result"></div>
+
+  <script>
+    // 1. Edite os itens da roleta aqui:
+    const items = [
+      "Viagem Surpresa", 
+      "Jantar Romântico", 
+      "O PRÊMIO ESPECIAL", 
+      "Vale Massagem", 
+      "Café na Cama", 
+      "Noite de Filmes"
+    ];
+    
+    // 2. Escolha o índice do item que SEMPRE vai ganhar (0 é o 1º item, 2 é "O PRÊMIO ESPECIAL")
+    const TARGET_INDEX = 2; 
+
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const numItems = items.length;
+    const arcSize = (2 * Math.PI) / numItems;
+    const colors = ["#FF9AA2", "#FFB7B2", "#FFDAC1", "#E2F0CB", "#B5EAD7", "#C7CEEA"];
+
+    function drawWheel() {
+      for (let i = 0; i < numItems; i++) {
+        const angle = i * arcSize;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(160, 160);
+        ctx.arc(160, 160, 160, angle, angle + arcSize);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(160, 160);
+        ctx.rotate(angle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText(items[i], 140, 5);
+        ctx.restore();
+      }
+    }
+
+    drawWheel();
+
+    let spun = false;
+
+    function spin() {
+      if (spun) return;
+      spun = true;
+      document.getElementById("spinBtn").disabled = true;
+
+      const degreesPerSlice = 360 / numItems;
+      const targetCenterAngle = (TARGET_INDEX * degreesPerSlice) + (degreesPerSlice / 2);
+      
+      // Dá 5 voltas completas e trava exatamente no item desejado na ponteira superior
+      const targetRotation = (360 * 5) + (270 - targetCenterAngle);
+
+      canvas.style.transform = `rotate(${targetRotation}deg)`;
+
+      setTimeout(() => {
+        document.getElementById("result").innerText = `🎉 Parabéns! Você ganhou: ${items[TARGET_INDEX]}!`;
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
