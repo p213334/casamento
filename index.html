@@ -69,31 +69,56 @@
       margin-top: 6px;
     }
 
+    .attempts-badge {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-accent);
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
     .wheel-wrapper {
       position: relative;
       width: 340px;
       height: 340px;
-      margin: 25px auto;
+      margin: 20px auto;
     }
 
-    .pointer {
+    .pointer-container {
       position: absolute;
-      top: -16px;
+      top: -18px;
       left: 50%;
       transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 13px solid transparent;
-      border-right: 13px solid transparent;
-      border-top: 26px solid var(--gold-accent);
-      z-index: 10;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
-      transform-origin: 50% 0%;
-      transition: transform 0.05s ease-out;
+      z-index: 20;
+      width: 30px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
     }
 
-    .pointer.tick {
-      transform: translateX(-50%) rotate(-18deg);
+    .pointer-joint {
+      position: absolute;
+      top: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #FFF 20%, #D4AF37 80%);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+      z-index: 2;
+    }
+
+    .pointer-pin {
+      position: absolute;
+      top: 6px;
+      width: 0;
+      height: 0;
+      border-left: 11px solid transparent;
+      border-right: 11px solid transparent;
+      border-top: 28px solid var(--gold-accent);
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+      transform-origin: 50% 0%;
+      transition: transform 0.04s ease-out;
     }
 
     canvas#wheel {
@@ -150,7 +175,6 @@
       border-color: transparent;
     }
 
-    /* Painel de leitura em tempo real */
     #status-container {
       margin-top: 15px;
       height: 45px;
@@ -178,11 +202,11 @@
     }
 
     #status-text.pulse {
-      transform: scale(1.1);
+      transform: scale(1.15);
     }
 
     #result {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--gold-accent);
       margin-top: 10px;
@@ -207,14 +231,18 @@
     <div class="header">
       <h1>Roleta do Casal</h1>
       <p>💍 Presente de Casamento</p>
+      <div class="attempts-badge" id="attemptsBadge">Tentativa 1 de 3</div>
     </div>
 
     <div class="wheel-wrapper">
-      <div class="pointer" id="pointer"></div>
+      <div class="pointer-container">
+        <div class="pointer-joint"></div>
+        <div class="pointer-pin" id="pointerPin"></div>
+      </div>
       <canvas id="wheel" width="340" height="340"></canvas>
     </div>
 
-    <button id="spinBtn" onclick="startNaturalSpin()">Girar Roleta</button>
+    <button id="spinBtn" onclick="startNaturalSpin()">Girar 1ª Vez</button>
 
     <div id="status-container">
       <div id="status-label"></div>
@@ -234,19 +262,21 @@
       "Vale Massagem"
     ];
 
-    const TARGET_INDEX = 2;
+    const TARGET_INDEX = 2; // Índice do Presente Especial
 
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
-    const pointer = document.getElementById("pointer");
+    const pointerPin = document.getElementById("pointerPin");
+    const spinBtn = document.getElementById("spinBtn");
+    const attemptsBadge = document.getElementById("attemptsBadge");
+    
     const numItems = items.length;
     const arcSize = (2 * Math.PI) / numItems;
-
-    // Cores alternadas com contraste aprimorado
     const colors = ["#3B4920", "#4D5E2B", "#5C6F36", "#708238", "#3B4920", "#5C6F36"];
 
     let currentAngle = 0;
     let isSpinning = false;
+    let currentAttempt = 1;
     let audioCtx = null;
 
     function initAudio() {
@@ -259,7 +289,7 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
-      const freq = 180 + (speedRatio * 380); 
+      const freq = 160 + (speedRatio * 380); 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
       
@@ -270,9 +300,6 @@
       gain.connect(audioCtx.destination);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.05);
-
-      pointer.classList.add("tick");
-      setTimeout(() => pointer.classList.remove("tick"), 50);
     }
 
     function playWinSound() {
@@ -305,18 +332,15 @@
         ctx.arc(170, 170, 165, angle, angle + arcSize);
         ctx.fill();
 
-        // Linhas divisorias bem definidas
         ctx.strokeStyle = "#F5F4EF";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Renderização dos Textos das Opções com Nitidez Extrema
         ctx.save();
         ctx.translate(170, 170);
         ctx.rotate(angle + arcSize / 2);
         ctx.textAlign = "right";
         
-        // Sombra de texto para destacar sobre qualquer cor de fundo
         ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
         ctx.shadowBlur = 4;
         ctx.fillStyle = "#FFFFFF";
@@ -325,7 +349,6 @@
         ctx.restore();
       }
 
-      // Centro decorativo em dourado e marfim
       ctx.beginPath();
       ctx.arc(170, 170, 24, 0, 2 * Math.PI);
       ctx.fillStyle = "#F5F4EF";
@@ -337,45 +360,49 @@
 
     drawWheel(currentAngle);
 
+    function getTargetIndexForAttempt(attempt) {
+      if (attempt === 3) return TARGET_INDEX;
+      
+      // Tentativas 1 e 2: escolhe qualquer item exceto TARGET_INDEX
+      const otherIndices = items.map((_, i) => i).filter(i => i !== TARGET_INDEX);
+      return attempt === 1 ? otherIndices[0] : otherIndices[3]; 
+    }
+
     function startNaturalSpin() {
       if (isSpinning) return;
       initAudio();
       
       isSpinning = true;
       document.body.classList.add("spinning");
-      document.getElementById("spinBtn").disabled = true;
+      spinBtn.disabled = true;
       document.getElementById("result").innerText = "";
 
       const degreesPerSlice = 360 / numItems;
-      const sliceStartAngle = TARGET_INDEX * degreesPerSlice;
+      const chosenIndex = getTargetIndexForAttempt(currentAttempt);
+      const sliceStartAngle = chosenIndex * degreesPerSlice;
       
-      // Para a 2.0 graus após a divisória do prêmio principal
-      const targetAngleInSlice = sliceStartAngle + 2.0; 
+      // Se for a 3ª tentativa, cai logo após a borda para o máximo suspense
+      const offset = currentAttempt === 3 ? 1.8 : (degreesPerSlice / 2);
+      const targetAngleInSlice = sliceStartAngle + offset; 
       
       const finalAngleDegrees = (270 - targetAngleInSlice + 360) % 360;
-      const totalDegrees = (360 * 10) + finalAngleDegrees; // 10 voltas para manter visibilidade
       
-      const duration = 16000; // 16 segundos totais para dar tempo de ler e torcer
+      // Duração e voltas maiores na última tentativa para dar aquele efeito final
+      const totalDegrees = (360 * (currentAttempt === 3 ? 10 : 6)) + finalAngleDegrees;
+      const duration = currentAttempt === 3 ? 14000 : 7000;
+      
       const startTime = performance.now();
       let lastSlice = -1;
 
-      // Curva com aceleração gradual e desaceleração arrastada fatia por fatia
-      function dramaticReadabilityCurve(t) {
-        if (t < 0.25) {
-          // Aceleração suave onde ainda dá para acompanhar o início
-          return Math.pow(t / 0.25, 2) * 0.15;
-        } else {
-          // Desaceleração longa que reduz drasticamente nos últimos 30% da corrida
-          const subT = (t - 0.25) / 0.75;
-          return 0.15 + (1 - Math.pow(1 - subT, 4.2)) * 0.85;
-        }
+      function continuousCreepEase(t) {
+        return 1 - Math.pow(1 - t, currentAttempt === 3 ? 5 : 4);
       }
 
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        const easedProgress = dramaticReadabilityCurve(progress);
+        const easedProgress = continuousCreepEase(progress);
         const currentDegrees = totalDegrees * easedProgress;
         currentAngle = (currentDegrees * Math.PI) / 180;
         
@@ -384,46 +411,75 @@
         const currentSlice = Math.floor(((270 - (currentDegrees % 360) + 360) % 360) / degreesPerSlice);
         const currentItemName = items[currentSlice];
 
+        const speedRatio = Math.pow(1 - progress, 4);
+        const sliceNormalized = (currentDegrees % degreesPerSlice);
+        
+        let bendAngle = 0;
+        if (sliceNormalized < 12) {
+          bendAngle = (12 - sliceNormalized) * 2.2 * Math.max(0.1, speedRatio);
+        }
+        pointerPin.style.transform = `rotate(${-bendAngle}deg)`;
+
         const labelEl = document.getElementById("status-label");
         const statusEl = document.getElementById("status-text");
 
-        if (progress < 0.25) {
-          labelEl.innerText = "Sua sorte está girando";
-          statusEl.innerText = "Preparem-se...";
-        } else if (progress >= 0.25 && progress < 0.75) {
-          labelEl.innerText = "Passando por";
-          statusEl.innerText = currentItemName;
-        } else if (progress >= 0.75 && progress < 0.94) {
-          labelEl.innerText = "Será que vai ser...";
-          statusEl.innerText = `${currentItemName}?`;
+        if (currentAttempt === 3) {
+          if (progress < 0.25) {
+            labelEl.innerText = "ÚLTIMA CHANCE!";
+            statusEl.innerText = "Sua sorte final...";
+          } else if (progress >= 0.25 && progress < 0.70) {
+            labelEl.innerText = "Passando por";
+            statusEl.innerText = currentItemName;
+          } else if (progress >= 0.70 && progress < 0.90) {
+            labelEl.innerText = "Diminuindo...";
+            statusEl.innerText = `${currentItemName}...`;
+          } else if (progress >= 0.90 && progress < 0.98) {
+            labelEl.innerText = "QUASE LÁ...";
+            statusEl.innerText = "SÓ MAIS UM POUQUINHO!";
+          } else {
+            labelEl.innerText = "NO LANCE FINAL!";
+            statusEl.innerText = currentItemName;
+          }
         } else {
-          labelEl.innerText = "Parando em...";
+          labelEl.innerText = `Tentativa ${currentAttempt} de 3`;
           statusEl.innerText = currentItemName;
         }
 
         if (currentSlice !== lastSlice) {
-          const speedRatio = Math.max(0.05, 1 - progress); 
-          playTickSound(speedRatio);
-          
+          playTickSound(Math.max(0.02, speedRatio));
           statusEl.classList.add("pulse");
           setTimeout(() => statusEl.classList.remove("pulse"), 80);
-
           lastSlice = currentSlice;
         }
 
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
+          pointerPin.style.transform = `rotate(0deg)`;
           document.body.classList.remove("spinning");
-          labelEl.innerText = "Resultado";
-          statusEl.innerText = "";
           
           const resultEl = document.getElementById("result");
-          resultEl.innerText = `✨ ${items[TARGET_INDEX]} ✨`;
-          resultEl.classList.add("reveal-animation");
-          
-          playWinSound();
-          triggerConfetti();
+
+          if (currentAttempt < 3) {
+            labelEl.innerText = `Resultado da ${currentAttempt}ª tentativa`;
+            resultEl.innerText = `Você tirou: ${items[chosenIndex]}`;
+            
+            currentAttempt++;
+            attemptsBadge.innerText = `Tentativa ${currentAttempt} de 3`;
+            spinBtn.innerText = `Girar ${currentAttempt}ª Vez`;
+            spinBtn.disabled = false;
+            isSpinning = false;
+          } else {
+            labelEl.innerText = "RESULTADO FINAL";
+            statusEl.innerText = "";
+            resultEl.innerText = `✨ ${items[TARGET_INDEX]} ✨`;
+            resultEl.classList.add("reveal-animation");
+            
+            spinBtn.innerText = "Prêmio Revelado!";
+            attemptsBadge.innerText = "Tentativas Encerradas";
+            playWinSound();
+            triggerConfetti();
+          }
         }
       }
 
