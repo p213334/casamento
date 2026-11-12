@@ -95,6 +95,12 @@
       height: 40px;
       display: flex;
       justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+
+    .pointer-container.blurred {
+      opacity: 0.2;
+      filter: blur(4px);
     }
 
     .pointer-joint {
@@ -124,7 +130,7 @@
     canvas#wheel {
       border-radius: 50%;
       box-shadow: 0 12px 35px rgba(42, 51, 27, 0.18);
-      transition: box-shadow 1.5s ease;
+      transition: box-shadow 1.5s ease, filter 0.8s ease, transform 0.8s ease;
       animation: floatWheel 4s ease-in-out infinite alternate;
     }
 
@@ -136,6 +142,65 @@
     body.spinning canvas#wheel {
       box-shadow: 0 0 55px rgba(212, 175, 55, 0.4);
       animation: none;
+    }
+
+    /* Efeito de desfoque e foco no elemento sorteado */
+    canvas#wheel.blurred {
+      filter: blur(8px) brightness(0.4);
+      transform: scale(0.96);
+      box-shadow: none;
+    }
+
+    /* Overlay gigante central sem círculo delimitador */
+    .winner-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      width: 360px;
+      padding: 20px 10px;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .winner-overlay.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Brilho de aura dourada no fundo do texto */
+    .winner-glow {
+      position: absolute;
+      width: 280px;
+      height: 100px;
+      background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.85) 0%, rgba(77, 94, 43, 0.4) 45%, rgba(0,0,0,0) 75%);
+      filter: blur(18px);
+      z-index: -1;
+      animation: glowPulse 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes glowPulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      100% { transform: scale(1.15); opacity: 1; }
+    }
+
+    .winner-text {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      white-space: nowrap;
+      text-shadow: 
+        0 0 10px rgba(212, 175, 55, 0.9),
+        0 0 20px rgba(212, 175, 55, 0.7),
+        0 2px 4px rgba(0,0,0,0.9);
+      padding: 0 10px;
     }
 
     canvas#confetti {
@@ -235,11 +300,16 @@
     </div>
 
     <div class="wheel-wrapper">
-      <div class="pointer-container">
+      <div class="pointer-container" id="pointerContainer">
         <div class="pointer-joint"></div>
         <div class="pointer-pin" id="pointerPin"></div>
       </div>
       <canvas id="wheel" width="340" height="340"></canvas>
+      
+      <div class="winner-overlay" id="winnerOverlay">
+        <div class="winner-glow"></div>
+        <div class="winner-text" id="winnerText"></div>
+      </div>
     </div>
 
     <button id="spinBtn" onclick="startNaturalSpin()">Girar 1ª Vez</button>
@@ -254,25 +324,27 @@
 
   <script>
     const items = [
-      "Jantar Romântico",
-      "Viagem Surpresa",
-      "O PRÊMIO ESPECIAL",
-      "Noite de Cinema",
-      "Café na Cama",
-      "Vale Massagem"
+      "Peru Gago",
+      "Marreta de Desempenar Vidro",
+      "R$ 600,00 NO PIX",
+      "Buzina de Bicicleta",
+      "Botox para Cavalo"
     ];
 
-    const TARGET_INDEX = 2; // Índice do Presente Especial
+    const TARGET_INDEX = 2; // Índice do "R$ 600,00 NO PIX"
 
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
     const pointerPin = document.getElementById("pointerPin");
+    const pointerContainer = document.getElementById("pointerContainer");
     const spinBtn = document.getElementById("spinBtn");
     const attemptsBadge = document.getElementById("attemptsBadge");
+    const winnerOverlay = document.getElementById("winnerOverlay");
+    const winnerText = document.getElementById("winnerText");
     
     const numItems = items.length;
     const arcSize = (2 * Math.PI) / numItems;
-    const colors = ["#3B4920", "#4D5E2B", "#5C6F36", "#708238", "#3B4920", "#5C6F36"];
+    const colors = ["#3B4920", "#4D5E2B", "#5C6F36", "#708238", "#8A9B52"];
 
     let currentAngle = 0;
     let isSpinning = false;
@@ -341,11 +413,11 @@
         ctx.rotate(angle + arcSize / 2);
         ctx.textAlign = "right";
         
-        ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
-        ctx.shadowBlur = 4;
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 6;
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 13px -apple-system, sans-serif";
-        ctx.fillText(items[i], 148, 5);
+        ctx.font = "bold 15px -apple-system, sans-serif";
+        ctx.fillText(items[i], 152, 5);
         ctx.restore();
       }
 
@@ -363,9 +435,8 @@
     function getTargetIndexForAttempt(attempt) {
       if (attempt === 3) return TARGET_INDEX;
       
-      // Tentativas 1 e 2: escolhe qualquer item exceto TARGET_INDEX
       const otherIndices = items.map((_, i) => i).filter(i => i !== TARGET_INDEX);
-      return attempt === 1 ? otherIndices[0] : otherIndices[3]; 
+      return attempt === 1 ? otherIndices[1] : otherIndices[3]; 
     }
 
     function startNaturalSpin() {
@@ -373,6 +444,12 @@
       initAudio();
       
       isSpinning = true;
+      
+      // Reseta desfoque e overlays de rodadas anteriores
+      canvas.classList.remove("blurred");
+      pointerContainer.classList.remove("blurred");
+      winnerOverlay.classList.remove("active");
+
       document.body.classList.add("spinning");
       spinBtn.disabled = true;
       document.getElementById("result").innerText = "";
@@ -381,15 +458,13 @@
       const chosenIndex = getTargetIndexForAttempt(currentAttempt);
       const sliceStartAngle = chosenIndex * degreesPerSlice;
       
-      // Se for a 3ª tentativa, cai logo após a borda para o máximo suspense
       const offset = currentAttempt === 3 ? 1.8 : (degreesPerSlice / 2);
       const targetAngleInSlice = sliceStartAngle + offset; 
       
       const finalAngleDegrees = (270 - targetAngleInSlice + 360) % 360;
       
-      // Duração e voltas maiores na última tentativa para dar aquele efeito final
       const totalDegrees = (360 * (currentAttempt === 3 ? 10 : 6)) + finalAngleDegrees;
-      const duration = currentAttempt === 3 ? 14000 : 7000;
+      const duration = currentAttempt === 3 ? 15000 : 7000;
       
       const startTime = performance.now();
       let lastSlice = -1;
@@ -435,7 +510,7 @@
             statusEl.innerText = `${currentItemName}...`;
           } else if (progress >= 0.90 && progress < 0.98) {
             labelEl.innerText = "QUASE LÁ...";
-            statusEl.innerText = "SÓ MAIS UM POUQUINHO!";
+            statusEl.innerText = "VAI DAR PIX?!";
           } else {
             labelEl.innerText = "NO LANCE FINAL!";
             statusEl.innerText = currentItemName;
@@ -458,11 +533,18 @@
           pointerPin.style.transform = `rotate(0deg)`;
           document.body.classList.remove("spinning");
           
+          const chosenText = items[chosenIndex];
           const resultEl = document.getElementById("result");
+
+          // Aplica desfoque na roleta e ativa o destaque central em linha única
+          canvas.classList.add("blurred");
+          pointerContainer.classList.add("blurred");
+          winnerText.innerText = chosenText;
+          winnerOverlay.classList.add("active");
 
           if (currentAttempt < 3) {
             labelEl.innerText = `Resultado da ${currentAttempt}ª tentativa`;
-            resultEl.innerText = `Você tirou: ${items[chosenIndex]}`;
+            resultEl.innerText = `Você tirou: ${chosenText}`;
             
             currentAttempt++;
             attemptsBadge.innerText = `Tentativa ${currentAttempt} de 3`;
@@ -470,7 +552,7 @@
             spinBtn.disabled = false;
             isSpinning = false;
           } else {
-            labelEl.innerText = "RESULTADO FINAL";
+            labelEl.innerText = "PARABÉNS AO CASAL!";
             statusEl.innerText = "";
             resultEl.innerText = `✨ ${items[TARGET_INDEX]} ✨`;
             resultEl.classList.add("reveal-animation");
